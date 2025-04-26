@@ -1,6 +1,7 @@
 import express, { Router, Request, Response, NextFunction } from 'express';
 import busController from '../controllers/busController';
 import trainController from '../controllers/trainController';
+import routingController from '../controllers/routingController';
 
 const router: Router = express.Router();
 
@@ -39,7 +40,7 @@ router.get('/divvy', wrapController(async (req: Request, res: Response) => {
 
 /**
  * @route   GET /api/transit/route
- * @desc    Get route between two points with transit options
+ * @desc    Get route between two points (legacy endpoint)
  * @access  Public
  */
 router.get('/route', wrapController(async (req: Request, res: Response) => {
@@ -71,5 +72,12 @@ router.get('/route', wrapController(async (req: Request, res: Response) => {
     ]
   });
 }));
+
+/**
+ * @route   GET /api/transit/routes
+ * @desc    Get multiple route options between two points with separate bus and train categorization
+ * @access  Public
+ */
+router.get('/routes', wrapController(routingController.getRoutes));
 
 export default router;

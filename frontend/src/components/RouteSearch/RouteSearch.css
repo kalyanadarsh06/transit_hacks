@@ -24,12 +24,58 @@
   color: #555;
 }
 
+.autocomplete-container {
+  position: relative;
+  width: 100%;
+}
+
 .input-group input {
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 16px;
+  transition: border-color 0.2s ease;
+}
+
+.input-group input:focus {
+  border-color: #2196F3;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+}
+
+.suggestion-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.suggestion-list li {
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.suggestion-list li:hover {
+  background-color: #f5f5f5;
+}
+
+.suggestion-list li:last-child {
+  border-bottom: none;
+  border-radius: 0 0 4px 4px;
 }
 
 .search-button {
@@ -50,8 +96,15 @@
 }
 
 .search-button:disabled {
-  background-color: #90CAF9;
+  background-color: #bbdefb;
   cursor: not-allowed;
+}
+
+.error-message {
+  color: #d32f2f;
+  margin-top: 10px;
+  font-size: 14px;
+  text-align: center;
 }
 
 .error-message {

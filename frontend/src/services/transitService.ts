@@ -199,6 +199,22 @@ export const transitService = {
 
   // Calculate route between two points
   getRoute: getRouteApi,
+  
+  // Get multiple route options with categorization by transit type
+  getRouteOptions: async (origin: string, destination: string) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/transit/routes`, {
+        params: {
+          origin,
+          destination
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error getting route options:', error);
+      throw error;
+    }
+  },
 
   // Legacy methods for backward compatibility
   getBusData: async (routeId?: string): Promise<BusRouteResponse | BusVehicleResponse> => {

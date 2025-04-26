@@ -1,0 +1,187 @@
+.route-options-container {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.route-options-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.route-options-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.route-options-tabs {
+  display: flex;
+  border-bottom: 1px solid #eee;
+}
+
+.tab {
+  flex: 1;
+  padding: 12px 8px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  background-color: #f8f8f8;
+}
+
+.tab.active {
+  color: #2196F3;
+  border-bottom: 2px solid #2196F3;
+}
+
+.route-options-content {
+  padding: 15px;
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.routes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.route-item {
+  border: 1px solid #eee;
+  border-radius: 6px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.route-item:hover {
+  border-color: #2196F3;
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.1);
+}
+
+.route-item.selected {
+  border-color: #2196F3;
+  background-color: rgba(33, 150, 243, 0.05);
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+  position: relative;
+  padding-left: 16px;
+}
+
+.route-item.selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: #2196F3;
+  border-radius: 4px 0 0 4px;
+}
+
+.route-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.route-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.route-duration {
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.route-distance {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.route-transit-info {
+  display: flex;
+  gap: 10px;
+}
+
+.transit-count {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.transit-icon {
+  font-size: 1rem;
+}
+
+.route-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.route-transit-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.transit-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: white;
+}
+
+.bus-badge {
+  background-color: #1E88E5;
+}
+
+.train-badge {
+  background-color: #F44336;
+}
+
+.route-eta {
+  font-size: 0.85rem;
+  color: #4CAF50;
+  font-weight: 500;
+}
+
+.loading-indicator {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+.error-message {
+  text-align: center;
+  padding: 20px;
+  color: #F44336;
+}
+
+.no-routes-message {
+  text-align: center;
+  padding: 15px;
+  color: #666;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}

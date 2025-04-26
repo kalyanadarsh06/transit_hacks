@@ -3,6 +3,7 @@ import './App.css';
 import MapComponent from './components/Map/MapComponent';
 import RouteSearch from './components/RouteSearch/RouteSearch';
 import TransitInfo from './components/TransitInfo/TransitInfo';
+import RouteOptions from './components/RouteOptions/RouteOptions';
 import { transitService } from './services/transitService';
 
 function App() {
@@ -10,6 +11,9 @@ function App() {
   const [busMarkers, setBusMarkers] = useState<any[]>([]);
   const [trainMarkers, setTrainMarkers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [origin, setOrigin] = useState<any>(null);
+  const [destination, setDestination] = useState<any>(null);
+  const [showRouteOptions, setShowRouteOptions] = useState<boolean>(false);
   
   // Fetch real-time vehicle locations
   useEffect(() => {
@@ -83,29 +87,41 @@ function App() {
     return () => clearInterval(interval);
   }, []);
   
-  // Handle when a route is found
-  const handleRouteFound = (route: any) => {
-    setSelectedRoute(route);
+  // Handle when route search is submitted
+  const handleRouteSearch = (originCoords: any, destinationCoords: any) => {
+    setIsLoading(true);
+    console.log('Origin coords:', originCoords);
+    console.log('Destination coords:', destinationCoords);
     
-    // In a real implementation, we would use actual route data
-    // For now, just create a mock route on the map
-    const mockRoutes = [
-      {
-        id: 'route-1',
-        color: '#2196F3',
-        coordinates: [
-          [-87.6298, 41.8781], // Chicago
-          [-87.6270, 41.8819], // Point 1
-          [-87.6240, 41.8830], // Point 2
-          [-87.6210, 41.8850]  // Destination
-        ]
-      }
-    ];
+    setOrigin(originCoords);
+    setDestination(destinationCoords);
+    setShowRouteOptions(true);
+    setIsLoading(false);
+  };
+  
+  // Handle when a specific route is selected
+  const handleRouteSelect = (route: any) => {
+    // Extract route geometry if available
+    let coordinates = [];
     
-    // Update the route on the map
+    // Check if the route has geometry
+    if (route.geometry && route.geometry.coordinates) {
+      coordinates = route.geometry.coordinates;
+    } else {
+      // Fallback to mock route if no geometry
+      coordinates = [
+        [-87.6298, 41.8781], // Chicago
+        [-87.6270, 41.8819], // Point 1
+        [-87.6240, 41.8830], // Point 2
+        [-87.6210, 41.8850]  // Destination
+      ];
+    }
+    
+    // Update the selected route
     setSelectedRoute({
       ...route,
-      routes: mockRoutes
+      color: '#2196F3',
+      coordinates: coordinates
     });
   };
 
@@ -116,21 +132,36 @@ function App() {
           <div className="loading-spinner">Loading transit data...</div>
         </div>
       )}
-      <div className="app-container">
+      <header className="App-header">
+        <h1>SafeTransit Chicago</h1>
+      </header>
+      
+      <div className="App-main">
         <div className="left-panel">
-          <RouteSearch onRouteFound={handleRouteFound} />
+          <RouteSearch onRouteFound={handleRouteSearch} />
+          {showRouteOptions && origin && destination && (
+            <RouteOptions 
+              origin={origin}
+              destination={destination}
+              onRouteSelect={handleRouteSelect}
+            />
+          )}
           <TransitInfo selectedRoute={selectedRoute} />
         </div>
         <div className="map-panel">
           <MapComponent 
-            routes={selectedRoute ? [selectedRoute] : []} 
+            routes={selectedRoute ? [selectedRoute] : []}
             busMarkers={busMarkers}
             trainMarkers={trainMarkers}
+            center={origin ? {lat: origin.lat, lng: origin.lng} : undefined}
+            origin={origin}
+            destination={destination}
           />
         </div>
       </div>
+      
       <footer className="App-footer">
-        <p>Transit Hacks 2025 - SafeTransit</p>
+        <p>Transit Hacks 2025 - SafeTransit Chicago</p>
       </footer>
     </div>
   );

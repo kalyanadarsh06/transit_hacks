@@ -1,0 +1,334 @@
+import React, { useState, useCallback } from 'react';
+import { GoogleMap, LoadScript, Marker, Polyline, InfoWindow } from '@react-google-maps/api';
+import './MapComponent.css';
+
+// Google Maps API key - this is a public key for demonstration purposes
+// For a production app you should replace this with your own restricted key
+const GOOGLE_MAPS_API_KEY = 'AIzaSyA6Lqp6eFkGHbQV3VyVv2Q76b5MdKinas8';
+
+// Default map container style
+const mapContainerStyle = {
+  width: '100%',
+  height: '100%',
+  borderRadius: '0',
+};
+
+// Default center on Chicago
+const defaultCenter = {
+  lat: 41.8781,
+  lng: -87.6298
+};
+
+interface MapComponentProps {
+  center?: { lat: number, lng: number }; // Map center coordinates
+  zoom?: number;
+  routes?: any[]; // Routes to display on the map
+  busMarkers?: any[]; // Bus locations to display
+  trainMarkers?: any[]; // Train locations to display
+  origin?: { lat: number, lng: number }; // Origin coordinates
+  destination?: { lat: number, lng: number }; // Destination coordinates
+}
+
+const MapComponent: React.FC<MapComponentProps> = ({
+  center = defaultCenter, // Default to Chicago
+  zoom = 12,
+  routes = [],
+  busMarkers = [],
+  trainMarkers = [],
+  origin,
+  destination
+}) => {
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [selectedMarker, setSelectedMarker] = useState<any | null>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
+  
+  // This function is called when the map instance is created
+  const onMapLoad = useCallback((map: google.maps.Map) => {
+    console.log('Google Maps loaded successfully');
+    setMap(map);
+  }, []);
+  
+  // Function to handle marker clicks
+  const handleMarkerClick = useCallback((marker: any) => {
+    setSelectedMarker(marker);
+  }, []);
+  
+  // Close the info window when clicking on the map
+  const handleMapClick = useCallback(() => {
+    setSelectedMarker(null);
+  }, []);
+
+  // Get route color based on type
+  const getRouteColor = (routeType: string) => {
+    switch(routeType?.toLowerCase()) {
+      case 'bus':
+        return '#1976D2'; // blue
+      case 'train':
+        return '#D32F2F'; // red
+      case 'mixed':
+        return '#7B1FA2'; // purple
+      default:
+        return '#4CAF50'; // green
+    }
+  };
+  
+  // Convert Mapbox coordinates format to Google Maps format
+  const convertCoordinates = (coordinates: any[]) => {
+    if (!coordinates || !coordinates.length) return [];
+    
+    // Mapbox format is [lng, lat], Google Maps is {lat, lng}
+    return coordinates.map(coord => {
+      if (Array.isArray(coord) && coord.length >= 2) {
+        return { lat: coord[1], lng: coord[0] };
+      }
+      return coord; // already in correct format
+    });
+  };
+  
+  // Calculate the center and bounds of the map to fit all elements
+  const getBoundsFromPoints = () => {
+    if (!isLoaded || !map) return null;
+    
+    const bounds = new google.maps.LatLngBounds();
+    let hasPoints = false;
+    
+    // Add route points to bounds
+    if (routes && routes.length > 0) {
+      routes.forEach(route => {
+        if (route.coordinates && route.coordinates.length) {
+          const points = convertCoordinates(route.coordinates);
+          points.forEach(point => {
+            bounds.extend(point);
+            hasPoints = true;
+          });
+        }
+      });
+    }
+    
+    // Add origin and destination to bounds
+    if (origin) {
+      bounds.extend(origin);
+      hasPoints = true;
+    }
+    
+    if (destination) {
+      bounds.extend(destination);
+      hasPoints = true;
+    }
+    
+    // Add bus and train markers to bounds
+    busMarkers.forEach(marker => {
+      if (marker.latitude && marker.longitude) {
+        bounds.extend({ lat: marker.latitude, lng: marker.longitude });
+        hasPoints = true;
+      }
+    });
+    
+    trainMarkers.forEach(marker => {
+      if (marker.latitude && marker.longitude) {
+        bounds.extend({ lat: marker.latitude, lng: marker.longitude });
+        hasPoints = true;
+      }
+    });
+    
+    // If we added points, fit the map to those bounds
+    if (hasPoints && map) {
+      map.fitBounds(bounds, { top: 50, right: 50, bottom: 50, left: 50 });
+    }
+    
+    return hasPoints ? bounds : null;
+  };
+
+  // Check if the map is loaded and if bounds need to be updated
+  if (isLoaded && map) {
+    getBoundsFromPoints();
+  }
+  
+  // Render error message if there's an error
+  if (mapError) {
+    return (
+      <div className="map-container">
+        <div className="map-error">
+          <p>Error loading maps: {mapError}</p>
+          <p>Please check your internet connection and try again.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading indicator until the map is fully loaded
+  if (!mapLoaded) {
+    return (
+      <div className="map-container">
+        <div className="map-loading">
+          <div className="map-loading-spinner"></div>
+          <p>Loading Google Maps...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="map-container">
+      <LoadScript
+        id="google-map-script"
+        googleMapsApiKey={GOOGLE_MAPS_API_KEY}
+        onLoad={() => console.log('Google Maps script loaded successfully')}
+        onError={(error) => {
+          console.error('Error loading Google Maps:', error);
+          setMapError('Failed to load Google Maps');
+        }}
+      >
+        <GoogleMap
+          mapContainerStyle={mapContainerStyle}
+          center={center}
+          zoom={zoom}
+          onLoad={onMapLoad}
+          onUnmount={() => setMap(null)}
+          options={{
+            mapTypeControl: false,
+            streetViewControl: false,
+            fullscreenControl: true,
+            zoomControl: true
+          }}
+          onTilesLoaded={() => setMapLoaded(true)}
+        >
+          {/* Render route lines */}
+          {routes.map((route, index) => {
+            const pathCoordinates = convertCoordinates(route.coordinates || []);
+            const routeColor = route.color || getRouteColor(route.type || '');
+            
+            return (
+              <Polyline
+                key={`route-${index}`}
+                path={pathCoordinates}
+                options={{
+                  strokeColor: routeColor,
+                  strokeOpacity: 0.8,
+                  strokeWeight: 5
+                }}
+              />
+            );
+          })}
+          
+          {/* Origin marker */}
+          {origin && (
+            <Marker
+              position={origin}
+              icon={{
+                url: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
+                labelOrigin: new google.maps.Point(15, -10)
+              }}
+              label={{
+                text: 'A',
+                color: 'white',
+                fontWeight: 'bold'
+              }}
+              onClick={() => handleMarkerClick({ type: 'origin', ...origin })}
+            />
+          )}
+        
+          {/* Destination marker */}
+          {destination && (
+            <Marker
+              position={destination}
+              icon={{
+                url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+                labelOrigin: new google.maps.Point(15, -10)
+              }}
+              label={{
+                text: 'B',
+                color: 'white',
+                fontWeight: 'bold'
+              }}
+              onClick={() => handleMarkerClick({ type: 'destination', ...destination })}
+            />
+          )}
+              url: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
+              labelOrigin: new google.maps.Point(15, -10)
+            }}
+            label={{ text: 'A', color: 'white', fontWeight: 'bold' }}
+            onClick={() => handleMarkerClick({ type: 'origin', ...origin })}
+          />
+        )}
+        
+        {/* Destination marker */}
+        {destination && (
+          <Marker
+            position={destination}
+            icon={{
+              url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+              labelOrigin: new google.maps.Point(15, -10)
+            }}
+            label={{ text: 'B', color: 'white', fontWeight: 'bold' }}
+            onClick={() => handleMarkerClick({ type: 'destination', ...destination })}
+          />
+        )}
+        
+        {/* Bus markers */}
+        {busMarkers.map((bus, index) => (
+          <Marker
+            key={`bus-${bus.id || index}`}
+            position={{ lat: bus.latitude, lng: bus.longitude }}
+            icon={{
+              url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+              scaledSize: new google.maps.Size(25, 25)
+            }}
+            onClick={() => handleMarkerClick(bus)}
+          />
+        ))}
+        
+        {/* Train markers */}
+        {trainMarkers.map((train, index) => (
+          <Marker
+            key={`train-${train.id || index}`}
+            position={{ lat: train.latitude, lng: train.longitude }}
+            icon={{
+              url: 'https://maps.google.com/mapfiles/ms/icons/purple-dot.png',
+              scaledSize: new google.maps.Size(25, 25)
+            }}
+            onClick={() => handleMarkerClick(train)}
+          />
+        ))}
+        
+        {/* Info window for selected marker */}
+        {selectedMarker && (
+          <InfoWindow
+            position={{
+              lat: selectedMarker.latitude || selectedMarker.lat,
+              lng: selectedMarker.longitude || selectedMarker.lng
+            }}
+            onCloseClick={() => setSelectedMarker(null)}
+          >
+            <div className="info-window">
+              {selectedMarker.type === 'origin' && (
+                <h3>Origin</h3>
+              )}
+              {selectedMarker.type === 'destination' && (
+                <h3>Destination</h3>
+              )}
+              {selectedMarker.route && (
+                <>
+                  <h3>Bus #{selectedMarker.id}</h3>
+                  <p>Route: {selectedMarker.route}</p>
+                  <p>Direction: {selectedMarker.direction}</p>
+                </>
+              )}
+              {selectedMarker.line && (
+                <>
+                  <h3>Train #{selectedMarker.id}</h3>
+                  <p>Line: {selectedMarker.line}</p>
+                  <p>Destination: {selectedMarker.destination}</p>
+                </>
+              )}
+            </div>
+          </InfoWindow>
+        )}
+        </GoogleMap>
+      </LoadScript>
+    </div>
+  );
+};
+
+export default MapComponent;
