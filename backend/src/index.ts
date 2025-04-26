@@ -16,6 +16,18 @@ const port = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// Root route
+app.get('/', (req: Request, res: Response) => {
+  res.status(200).json({
+    message: 'Welcome to SafeTransit API',
+    endpoints: {
+      transit: '/api/transit',
+      safety: '/api/safety',
+      health: '/api/health'
+    }
+  });
+});
+
 // Routes
 app.use('/api/transit', transitRoutes);
 app.use('/api/safety', safetyRoutes);
