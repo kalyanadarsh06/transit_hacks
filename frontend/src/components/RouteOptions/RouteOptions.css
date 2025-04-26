@@ -4,6 +4,9 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   margin-bottom: 20px;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .route-options-header {
@@ -47,6 +50,9 @@
   padding: 15px;
   max-height: 350px;
   overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .routes-list {
@@ -92,6 +98,9 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
 }
 
 .route-info {
@@ -114,6 +123,7 @@
 .route-transit-info {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .transit-count {
@@ -130,14 +140,19 @@
 
 .route-details {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
 }
 
 .route-transit-badges {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .transit-badge {

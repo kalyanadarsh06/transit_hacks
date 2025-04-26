@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// Crime data types
 export interface CrimeIncident {
   primary_type: string;
   date: string;
@@ -9,7 +8,6 @@ export interface CrimeIncident {
   [key: string]: any;
 }
 
-// Define the manual crime scores
 const crimeTypesList = [
   'arson', 'assault', 'battery', 'burglary', 'criminal damage', 'criminal trespass',
   'deceptive practice', 'gambling', 'homicide', 'intimidation', 'interference with public officer',
@@ -21,22 +19,17 @@ const crimeTypesList = [
 
 const scoresArray = [7, 8, 8, 6, 5, 5, 9, 4, 10, 8, 7, 9, 3, 7, 10, 2, 5, 4, 1, 2, 9, 7, 8, 5, 9, 6, 8, 3, 8];
 
-// Build crime type → score lookup
 const crimeScores: { [key: string]: number } = {};
 for (let i = 0; i < crimeTypesList.length && i < scoresArray.length; i++) {
   crimeScores[crimeTypesList[i]] = scoresArray[i];
 }
 
-// Cache for crime data to avoid refetching
 let crimeDataCache: CrimeIncident[] = [];
 let lastFetchTime = 0;
 const CACHE_TTL = 12 * 60 * 60 * 1000; // 12 hours in milliseconds
 
-// Service for handling crime data
 export const crimeService = {
-  // Fetch crime data from Chicago API
   fetchCrimeData: async (): Promise<CrimeIncident[]> => {
-    // Check if we already have cached data that's not too old
     const now = Date.now();
     if (crimeDataCache.length > 0 && (now - lastFetchTime) < CACHE_TTL) {
       console.log('Using cached crime data');
@@ -45,7 +38,6 @@ export const crimeService = {
 
     try {
       console.log('Fetching fresh crime data from Chicago API...');
-      // Use the City of Chicago crime API - limit to 5,000 most recent incidents for performance
       const url = 'https://data.cityofchicago.org/resource/ijzp-q8t2.json?$limit=5000&$order=date DESC';
       
       const response = await axios.get(url);
@@ -71,7 +63,6 @@ export const crimeService = {
     }
   },
 
-  // Get safety score for a route based on the beats it passes through
   getRouteSafetyScore: (route: any, crimeData: CrimeIncident[]): number => {
     // Extract waypoints from route
     if (!route || !route.coordinates || route.coordinates.length === 0) {
@@ -102,7 +93,6 @@ export const crimeService = {
     return Math.round(safetyScore);
   },
 
-  // Evaluate and rank routes by safety
   rankRoutesBySafety: async (routes: any[]): Promise<any[]> => {
     if (!routes || routes.length === 0) {
       return [];
@@ -132,7 +122,6 @@ export const crimeService = {
   }
 };
 
-// Process crimes to assign safety scores
 function processCrimes(crimes: CrimeIncident[]): void {
   const dateField = findDateField(crimes[0]);
   if (!dateField) {
@@ -146,7 +135,6 @@ function processCrimes(crimes: CrimeIncident[]): void {
   });
 }
 
-// Find the average crime score per day for a given beat
 function avgCrimeScorePerDay(crimeData: CrimeIncident[], beatNumber: string): number {
   const beatCrimes = crimeData.filter(c => c.beat === beatNumber);
 
@@ -168,14 +156,12 @@ function avgCrimeScorePerDay(crimeData: CrimeIncident[], beatNumber: string): nu
   return totalScore / daysSpan;
 }
 
-// Lookup crime type severity
 function lookupSeverity(crimeType: string | undefined, scores: { [key: string]: number }): number {
   if (!crimeType) return 1;
   const key = crimeType.toLowerCase();
   return scores[key] || 1;
 }
 
-// Auto-detect which field is the date
 function findDateField(row: any): string | null {
   if (!row) return null;
   
@@ -189,9 +175,6 @@ function findDateField(row: any): string | null {
   return null;
 }
 
-// Map coordinates to Chicago police beats
-// This is a simplified placeholder implementation
-// In a real implementation, we'd need GIS data for Chicago police beats
 function getBeatsFromCoordinates(coordinates: [number, number][]): string[] {
   // For now, return some sample beats based on coordinates
   // Chicago beats are 4-digit identifiers like "0313"

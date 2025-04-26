@@ -156,8 +156,6 @@ const getTrainLocationsApi = async (routeCode: string): Promise<TrainLocationRes
   }
 };
 
-
-
 // Calculate route between two points
 const getRouteApi = async (routeRequest: RouteRequest) => {
   try {
@@ -169,7 +167,6 @@ const getRouteApi = async (routeRequest: RouteRequest) => {
         prioritizeSafety: prioritizeSafety || false
       }
     });
-    
     // If prioritizing safety and we have a route, add safety score
     if (prioritizeSafety && response.data) {
       try {
@@ -180,15 +177,12 @@ const getRouteApi = async (routeRequest: RouteRequest) => {
         console.error('Error calculating safety score:', safetyError);
       }
     }
-    
     return response.data;
   } catch (error) {
     console.error('Error calculating route:', error);
     throw error;
   }
 };
-
-
 
 // Helper function to calculate approximate distance in meters
 const getApproximateDistance = (origin: any, destination: any): number => {
@@ -413,33 +407,26 @@ const generateBasicFallbackRoutes = (originCoords: any, destCoords: any, distanc
 
 // Transit service API calls
 export const transitService = {
-  // Get all bus routes
   getBusRoutes: getBusRoutesApi,
   
-  // Get route options with safety rankings
   getRouteOptionsWithSafety: async (origin: any, destination: any, prioritizeSafety: boolean = false) => {
     try {
       // First, get regular route options
       const routeOptions = await transitService.getRouteOptions(origin, destination);
       
       if (prioritizeSafety) {
-        // Rank routes by safety if that's prioritized
         // Rank each category of routes by safety
         routeOptions.busRoutes = await crimeService.rankRoutesBySafety(routeOptions.busRoutes);
         routeOptions.trainRoutes = await crimeService.rankRoutesBySafety(routeOptions.trainRoutes);
         routeOptions.mixedRoutes = await crimeService.rankRoutesBySafety(routeOptions.mixedRoutes);
         
-        // Re-create allRoutes to maintain safety rankings
         routeOptions.allRoutes = [...routeOptions.busRoutes, ...routeOptions.trainRoutes, ...routeOptions.mixedRoutes];
         
-        // Sort all routes by safety score (highest is safest)
         routeOptions.allRoutes.sort((a: any, b: any) => (b.safetyScore || 0) - (a.safetyScore || 0));
         
-        // Add a flag to identify the safest route overall
         if (routeOptions.allRoutes.length > 0) {
           routeOptions.allRoutes[0].safestOverall = true;
           
-          // Also flag the safest in each category
           if (routeOptions.busRoutes.length > 0) routeOptions.busRoutes[0].safestInCategory = true;
           if (routeOptions.trainRoutes.length > 0) routeOptions.trainRoutes[0].safestInCategory = true;
           if (routeOptions.mixedRoutes.length > 0) routeOptions.mixedRoutes[0].safestInCategory = true;
@@ -449,12 +436,10 @@ export const transitService = {
       return routeOptions;
     } catch (error) {
       console.error('Error getting route options with safety:', error);
-      // If safety ranking fails, return regular routes
       return transitService.getRouteOptions(origin, destination);
     }
   },
 
-  // Get bus predictions for a specific route
   getBusPredictionsByRoute: getBusPredictionsByRouteApi,
 
   // Get bus vehicles (locations) for a specific route

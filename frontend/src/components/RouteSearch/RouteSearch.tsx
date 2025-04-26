@@ -30,10 +30,8 @@ const RouteSearch: React.FC<RouteSearchProps> = ({ onSearch }) => {
   const originInputRef = useRef<HTMLInputElement>(null);
   const destinationInputRef = useRef<HTMLInputElement>(null);
   
-    // Google Maps API Key for Geocoding
-  const GOOGLE_MAPS_API_KEY = 'AIzaSyCG1GkdFgkusK1wOejV37IbrOxGRiIfKts';
+    const GOOGLE_MAPS_API_KEY = 'AIzaSyCG1GkdFgkusK1wOejV37IbrOxGRiIfKts';
   
-  // Example Chicago locations for initial suggestions
   const chicagoLocations = [
     {
       id: 'wrigley',
@@ -62,17 +60,15 @@ const RouteSearch: React.FC<RouteSearchProps> = ({ onSearch }) => {
     }
   ];
   
-  // Function to geocode an address using Google Geocoding API
   const geocodeAddress = async (address: string) => {
     if (!address.trim()) return [];
     
     try {
-      // Add "Chicago, IL" to the query if not already included to focus on Chicago area
       const query = address.toLowerCase().includes('chicago') ? address : `${address}, Chicago, IL`;
       const encodedAddress = encodeURIComponent(query);
       const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${GOOGLE_MAPS_API_KEY}&components=administrative_area:IL|locality:Chicago`;
       
-      console.log('Geocoding address:', query);
+
       const response = await fetch(url);
       const data = await response.json();
       
@@ -91,7 +87,6 @@ const RouteSearch: React.FC<RouteSearchProps> = ({ onSearch }) => {
     }
   };
 
-  // Handle input changes for origin and destination
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'origin' | 'destination') => {
     const value = e.target.value;
     if (type === 'origin') {
@@ -122,7 +117,6 @@ const RouteSearch: React.FC<RouteSearchProps> = ({ onSearch }) => {
     console.log(`Getting address suggestions for ${type} with query: "${query}"`);
     
     if (!query || query.length < 3) {
-      // For short queries, show some Chicago landmarks as defaults
       const defaultSuggestions = chicagoLocations.filter(location => 
         location.place_name.toLowerCase().includes(query.toLowerCase())
       );
@@ -138,9 +132,8 @@ const RouteSearch: React.FC<RouteSearchProps> = ({ onSearch }) => {
     }
     
     try {
-      // Geocode the address to get suggestions
       const geocodedResults = await geocodeAddress(query);
-      console.log(`Found ${geocodedResults.length} geocoded suggestions for ${type}:`, geocodedResults);
+
       
       if (type === 'origin') {
         setOriginSuggestions(geocodedResults);
@@ -183,14 +176,14 @@ const RouteSearch: React.FC<RouteSearchProps> = ({ onSearch }) => {
   // Handle input changes and show suggestions when the user types
   useEffect(() => {
     if (origin.length >= 2) {
-      console.log('Origin changed, fetching suggestions');
+
       debouncedShowOriginSuggestions(origin);
     }
   }, [origin]);
   
   useEffect(() => {
     if (destination.length >= 2) {
-      console.log('Destination changed, fetching suggestions');
+
       debouncedShowDestinationSuggestions(destination);
     }
   }, [destination]);
@@ -252,22 +245,22 @@ const RouteSearch: React.FC<RouteSearchProps> = ({ onSearch }) => {
 
       // If addresses weren't selected from suggestions, try to geocode them directly
       if (!originCoords) {
-        console.log('Geocoding origin address:', origin);
+
         const geocodedResults = await geocodeAddress(origin);
         if (geocodedResults.length > 0) {
           const firstResult = geocodedResults[0];
           originCoords = { lat: firstResult.center[1], lng: firstResult.center[0] };
-          console.log('Successfully geocoded origin to:', originCoords);
+
         }
       }
 
       if (!destinationCoords) {
-        console.log('Geocoding destination address:', destination);
+
         const geocodedResults = await geocodeAddress(destination);
         if (geocodedResults.length > 0) {
           const firstResult = geocodedResults[0];
           destinationCoords = { lat: firstResult.center[1], lng: firstResult.center[0] };
-          console.log('Successfully geocoded destination to:', destinationCoords);
+
         }
       }
 
@@ -276,7 +269,7 @@ const RouteSearch: React.FC<RouteSearchProps> = ({ onSearch }) => {
         throw new Error('Could not geocode one or both addresses. Please enter valid Chicago addresses.');
       }
 
-      console.log('Submitting route request with coordinates:', { originCoords, destinationCoords });
+
       
       // Pass the coordinates to the parent component's search handler
       onSearch(originCoords, destinationCoords);
@@ -304,12 +297,7 @@ const RouteSearch: React.FC<RouteSearchProps> = ({ onSearch }) => {
               onFocus={() => showAddressSuggestions(origin, 'origin')}
               required
             />
-            {/* Debugging info */}
-            <div style={{ fontSize: '10px', color: '#999' }}>
-              Input Length: {origin.length}, 
-              Suggestions: {originSuggestions.length}, 
-              Show: {showOriginSuggestions ? 'true' : 'false'}
-            </div>
+
             
             {showOriginSuggestions && originSuggestions.length > 0 && (
               <ul className="suggestion-list" style={{ display: 'block', position: 'absolute', zIndex: 1000, width: '100%' }}>
@@ -339,12 +327,7 @@ const RouteSearch: React.FC<RouteSearchProps> = ({ onSearch }) => {
               onFocus={() => showAddressSuggestions(destination, 'destination')}
               required
             />
-            {/* Debugging info */}
-            <div style={{ fontSize: '10px', color: '#999' }}>
-              Input Length: {destination.length}, 
-              Suggestions: {destinationSuggestions.length}, 
-              Show: {showDestinationSuggestions ? 'true' : 'false'}
-            </div>
+
             
             {showDestinationSuggestions && destinationSuggestions.length > 0 && (
               <ul className="suggestion-list" style={{ display: 'block', position: 'absolute', zIndex: 1000, width: '100%' }}>
