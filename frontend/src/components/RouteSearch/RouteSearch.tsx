@@ -9,10 +9,10 @@ interface GeocodedFeature {
 }
 
 interface RouteSearchProps {
-  onRouteFound: (origin: any, destination: any) => void;
+  onSearch: (origin: any, destination: any) => void;
 }
 
-const RouteSearch: React.FC<RouteSearchProps> = ({ onRouteFound }) => {
+const RouteSearch: React.FC<RouteSearchProps> = ({ onSearch }) => {
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
   const [loading, setLoading] = useState(false);
@@ -30,17 +30,15 @@ const RouteSearch: React.FC<RouteSearchProps> = ({ onRouteFound }) => {
   const originInputRef = useRef<HTMLInputElement>(null);
   const destinationInputRef = useRef<HTMLInputElement>(null);
   
-  // Mock data instead of using Mapbox API which is having issues
+    // Google Maps API Key for Geocoding
+  const GOOGLE_MAPS_API_KEY = 'AIzaSyCG1GkdFgkusK1wOejV37IbrOxGRiIfKts';
+  
+  // Example Chicago locations for initial suggestions
   const chicagoLocations = [
     {
       id: 'wrigley',
       place_name: 'Wrigley Field, 1060 W Addison St, Chicago, IL 60613',
       center: [-87.6553, 41.9484] as [number, number]
-    },
-    {
-      id: 'willis',
-      place_name: 'Willis Tower, 233 S Wacker Dr, Chicago, IL 60606',
-      center: [-87.6358, 41.8789] as [number, number]
     },
     {
       id: 'millennium',
@@ -53,16 +51,6 @@ const RouteSearch: React.FC<RouteSearchProps> = ({ onRouteFound }) => {
       center: [-87.6063, 41.8919] as [number, number]
     },
     {
-      id: 'union-station',
-      place_name: 'Union Station, 225 S Canal St, Chicago, IL 60606',
-      center: [-87.6395, 41.8786] as [number, number]
-    },
-    {
-      id: 'field-museum',
-      place_name: 'Field Museum, 1400 S Lake Shore Dr, Chicago, IL 60605',
-      center: [-87.6169, 41.8663] as [number, number]
-    },
-    {
       id: 'ohare',
       place_name: "O'Hare International Airport, Chicago, IL 60666",
       center: [-87.9073, 41.9742] as [number, number]
@@ -71,18 +59,37 @@ const RouteSearch: React.FC<RouteSearchProps> = ({ onRouteFound }) => {
       id: 'midway',
       place_name: 'Midway International Airport, Chicago, IL 60638',
       center: [-87.7522, 41.7868] as [number, number]
-    },
-    {
-      id: 'lincoln-park',
-      place_name: 'Lincoln Park, Chicago, IL',
-      center: [-87.6368, 41.9214] as [number, number]
-    },
-    {
-      id: 'garfield-park',
-      place_name: 'Garfield Park, Chicago, IL',
-      center: [-87.7172, 41.8826] as [number, number]
     }
   ];
+  
+  // Function to geocode an address using Google Geocoding API
+  const geocodeAddress = async (address: string) => {
+    if (!address.trim()) return [];
+    
+    try {
+      // Add "Chicago, IL" to the query if not already included to focus on Chicago area
+      const query = address.toLowerCase().includes('chicago') ? address : `${address}, Chicago, IL`;
+      const encodedAddress = encodeURIComponent(query);
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${GOOGLE_MAPS_API_KEY}&components=administrative_area:IL|locality:Chicago`;
+      
+      console.log('Geocoding address:', query);
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.status === 'OK' && data.results.length > 0) {
+        // Convert Google Geocoding results to our format
+        return data.results.map((result: any) => ({
+          id: result.place_id,
+          place_name: result.formatted_address,
+          center: [result.geometry.location.lng, result.geometry.location.lat] as [number, number]
+        }));
+      }
+      return [];
+    } catch (error) {
+      console.error('Error geocoding address:', error);
+      return [];
+    }
+  };
 
   // Handle input changes for origin and destination
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'origin' | 'destination') => {
@@ -94,8 +101,8 @@ const RouteSearch: React.FC<RouteSearchProps> = ({ onRouteFound }) => {
         setSelectedOriginCoords(null);
         setShowOriginSuggestions(false);
       } else {
-        // Filter suggestions based on input
-        showMockSuggestions(value, type);
+        // Get address suggestions based on input
+        // No need to call here - it's handled by the useEffect
       }
     } else {
       setDestination(value);
@@ -104,66 +111,87 @@ const RouteSearch: React.FC<RouteSearchProps> = ({ onRouteFound }) => {
         setSelectedDestinationCoords(null);
         setShowDestinationSuggestions(false);
       } else {
-        // Filter suggestions based on input
-        showMockSuggestions(value, type);
+        // Get address suggestions based on input
+        // No need to call here - it's handled by the useEffect
       }
     }
   };
   
-  // Function to filter and show mock suggestions
-  const showMockSuggestions = (query: string, type: 'origin' | 'destination') => {
-    console.log(`Showing mock suggestions for ${type} with query: "${query}"`);
+  // Function to get address suggestions using Google Geocoding
+  const showAddressSuggestions = async (query: string, type: 'origin' | 'destination') => {
+    console.log(`Getting address suggestions for ${type} with query: "${query}"`);
     
-    if (!query || query.length < 2) {
+    if (!query || query.length < 3) {
+      // For short queries, show some Chicago landmarks as defaults
+      const defaultSuggestions = chicagoLocations.filter(location => 
+        location.place_name.toLowerCase().includes(query.toLowerCase())
+      );
+      
       if (type === 'origin') {
-        setOriginSuggestions([]);
-        setShowOriginSuggestions(false);
+        setOriginSuggestions(defaultSuggestions);
+        setShowOriginSuggestions(defaultSuggestions.length > 0);
       } else {
-        setDestinationSuggestions([]);
-        setShowDestinationSuggestions(false);
+        setDestinationSuggestions(defaultSuggestions);
+        setShowDestinationSuggestions(defaultSuggestions.length > 0);
       }
       return;
     }
     
-    // Filter locations based on search query - even a partial match at the beginning of a word
-    const queryLower = query.toLowerCase();
-    const filteredLocations = chicagoLocations.filter(location => {
-      // Check if any word in the place_name starts with the query
-      const words = location.place_name.toLowerCase().split(/\s+/);
-      return words.some(word => word.startsWith(queryLower)) || 
-             location.place_name.toLowerCase().includes(queryLower);
-    });
-    
-    // Log the actual filtering process
-    console.log('Filtering locations with query:', queryLower);
-    chicagoLocations.forEach(loc => {
-      const matches = loc.place_name.toLowerCase().includes(queryLower);
-      console.log(`- ${loc.place_name}: ${matches ? 'MATCH' : 'no match'}`);
-    });
-    
-    console.log(`Found ${filteredLocations.length} suggestions for ${type}:`, filteredLocations);
-    
-    if (type === 'origin') {
-      setOriginSuggestions(filteredLocations);
-      setShowOriginSuggestions(filteredLocations.length > 0);
-    } else {
-      setDestinationSuggestions(filteredLocations);
-      setShowDestinationSuggestions(filteredLocations.length > 0);
+    try {
+      // Geocode the address to get suggestions
+      const geocodedResults = await geocodeAddress(query);
+      console.log(`Found ${geocodedResults.length} geocoded suggestions for ${type}:`, geocodedResults);
+      
+      if (type === 'origin') {
+        setOriginSuggestions(geocodedResults);
+        setShowOriginSuggestions(geocodedResults.length > 0);
+      } else {
+        setDestinationSuggestions(geocodedResults);
+        setShowDestinationSuggestions(geocodedResults.length > 0);
+      }
+    } catch (error) {
+      console.error(`Error getting suggestions for ${type}:`, error);
+      // Fall back to Chicago landmarks if geocoding fails
+      if (type === 'origin') {
+        setOriginSuggestions(chicagoLocations);
+        setShowOriginSuggestions(chicagoLocations.length > 0);
+      } else {
+        setDestinationSuggestions(chicagoLocations);
+        setShowDestinationSuggestions(chicagoLocations.length > 0);
+      }
     }
   };
   
+  // Use a debounce function to avoid excessive API calls while typing
+  const debounce = (func: Function, delay: number) => {
+    let timerId: NodeJS.Timeout;
+    return (...args: any) => {
+      clearTimeout(timerId);
+      timerId = setTimeout(() => func(...args), delay);
+    };
+  };
+
+  // Create debounced versions of the geocoding function
+  const debouncedShowOriginSuggestions = useRef(debounce((query: string) => {
+    showAddressSuggestions(query, 'origin');
+  }, 500)).current;
+
+  const debouncedShowDestinationSuggestions = useRef(debounce((query: string) => {
+    showAddressSuggestions(query, 'destination');
+  }, 500)).current;
+
   // Handle input changes and show suggestions when the user types
   useEffect(() => {
     if (origin.length >= 2) {
-      console.log('Origin changed, showing suggestions');
-      showMockSuggestions(origin, 'origin');
+      console.log('Origin changed, fetching suggestions');
+      debouncedShowOriginSuggestions(origin);
     }
   }, [origin]);
   
   useEffect(() => {
     if (destination.length >= 2) {
-      console.log('Destination changed, showing suggestions');
-      showMockSuggestions(destination, 'destination');
+      console.log('Destination changed, fetching suggestions');
+      debouncedShowDestinationSuggestions(destination);
     }
   }, [destination]);
   
@@ -218,22 +246,40 @@ const RouteSearch: React.FC<RouteSearchProps> = ({ onRouteFound }) => {
     setError(null);
 
     try {
-      // Use the coordinates from selected suggestions if available
-      const originCoords = selectedOriginCoords;
-      const destinationCoords = selectedDestinationCoords;
+      // Try to use coordinates from selected suggestions first
+      let originCoords = selectedOriginCoords;
+      let destinationCoords = selectedDestinationCoords;
 
-      if (!originCoords || !destinationCoords) {
-        throw new Error('Please select valid addresses from the dropdown suggestions');
+      // If addresses weren't selected from suggestions, try to geocode them directly
+      if (!originCoords) {
+        console.log('Geocoding origin address:', origin);
+        const geocodedResults = await geocodeAddress(origin);
+        if (geocodedResults.length > 0) {
+          const firstResult = geocodedResults[0];
+          originCoords = { lat: firstResult.center[1], lng: firstResult.center[0] };
+          console.log('Successfully geocoded origin to:', originCoords);
+        }
       }
 
-      // Create route request
-      const routeRequest: RouteRequest = {
-        origin: originCoords,
-        destination: destinationCoords,
-      };
+      if (!destinationCoords) {
+        console.log('Geocoding destination address:', destination);
+        const geocodedResults = await geocodeAddress(destination);
+        if (geocodedResults.length > 0) {
+          const firstResult = geocodedResults[0];
+          destinationCoords = { lat: firstResult.center[1], lng: firstResult.center[0] };
+          console.log('Successfully geocoded destination to:', destinationCoords);
+        }
+      }
 
-      // Pass the coordinates to the parent component
-      onRouteFound(originCoords, destinationCoords);
+      // Check if we have valid coordinates now
+      if (!originCoords || !destinationCoords) {
+        throw new Error('Could not geocode one or both addresses. Please enter valid Chicago addresses.');
+      }
+
+      console.log('Submitting route request with coordinates:', { originCoords, destinationCoords });
+      
+      // Pass the coordinates to the parent component's search handler
+      onSearch(originCoords, destinationCoords);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to find route. Please try again.');
       console.error('Route search error:', err);
@@ -252,10 +298,10 @@ const RouteSearch: React.FC<RouteSearchProps> = ({ onRouteFound }) => {
             <input
               type="text"
               id="origin"
-              placeholder="Enter origin address"
+              placeholder="Enter any Chicago address"
               value={origin}
               onChange={(e) => setOrigin(e.target.value)}
-              onFocus={() => showMockSuggestions(origin, 'origin')}
+              onFocus={() => showAddressSuggestions(origin, 'origin')}
               required
             />
             {/* Debugging info */}
@@ -287,10 +333,10 @@ const RouteSearch: React.FC<RouteSearchProps> = ({ onRouteFound }) => {
             <input
               type="text"
               id="destination"
-              placeholder="Enter destination address"
+              placeholder="Enter any Chicago address"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
-              onFocus={() => showMockSuggestions(destination, 'destination')}
+              onFocus={() => showAddressSuggestions(destination, 'destination')}
               required
             />
             {/* Debugging info */}

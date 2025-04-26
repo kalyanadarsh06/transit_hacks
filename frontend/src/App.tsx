@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import MapComponent from './components/Map/MapComponent';
 import RouteSearch from './components/RouteSearch/RouteSearch';
-import TransitInfo from './components/TransitInfo/TransitInfo';
 import RouteOptions from './components/RouteOptions/RouteOptions';
 import { transitService } from './services/transitService';
 
@@ -90,38 +89,67 @@ function App() {
   // Handle when route search is submitted
   const handleRouteSearch = (originCoords: any, destinationCoords: any) => {
     setIsLoading(true);
-    console.log('Origin coords:', originCoords);
-    console.log('Destination coords:', destinationCoords);
+    console.log('Origin coords in App:', originCoords);
+    console.log('Destination coords in App:', destinationCoords);
     
+    // Set coordinates for routing
     setOrigin(originCoords);
     setDestination(destinationCoords);
+    
+    // Generate a basic route immediately to show on map
+    const mockBusRoute = {
+      duration: 1800, // 30 minutes
+      distance: 10000, // 10km
+      type: 'bus',
+      color: '#1976D2', // Blue for bus routes
+      coordinates: [
+        [originCoords.lng, originCoords.lat],
+        [originCoords.lng + 0.02, originCoords.lat + 0.01],
+        [destinationCoords.lng - 0.02, destinationCoords.lat - 0.01],
+        [destinationCoords.lng, destinationCoords.lat]
+      ]
+    };
+    
+    // Set as selected route to display on map immediately
+    setSelectedRoute(mockBusRoute);
+    
+    // Show route options panel
     setShowRouteOptions(true);
     setIsLoading(false);
   };
   
   // Handle when a specific route is selected
   const handleRouteSelect = (route: any) => {
+    console.log('Route selected:', route);
+    
     // Extract route geometry if available
     let coordinates = [];
     
     // Check if the route has geometry
     if (route.geometry && route.geometry.coordinates) {
       coordinates = route.geometry.coordinates;
+    } else if (route.coordinates) {
+      coordinates = route.coordinates;
     } else {
-      // Fallback to mock route if no geometry
+      // Fallback route if no geometry
       coordinates = [
-        [-87.6298, 41.8781], // Chicago
-        [-87.6270, 41.8819], // Point 1
-        [-87.6240, 41.8830], // Point 2
-        [-87.6210, 41.8850]  // Destination
+        [origin.lng, origin.lat], // Start
+        [destination.lng, destination.lat]  // End
       ];
     }
     
-    // Update the selected route
+    // Preserve route type for Google Maps
+    const routeType = route.type || 'transit';
+    
+    // Update the selected route with all required properties
     setSelectedRoute({
       ...route,
-      color: '#2196F3',
-      coordinates: coordinates
+      type: routeType,
+      color: route.color || '#2196F3',
+      coordinates: coordinates,
+      // Make sure we keep origin and destination for the map
+      origin: origin,
+      destination: destination
     });
   };
 
@@ -138,7 +166,7 @@ function App() {
       
       <div className="App-main">
         <div className="left-panel">
-          <RouteSearch onRouteFound={handleRouteSearch} />
+          <RouteSearch onSearch={handleRouteSearch} />
           {showRouteOptions && origin && destination && (
             <RouteOptions 
               origin={origin}
@@ -146,7 +174,6 @@ function App() {
               onRouteSelect={handleRouteSelect}
             />
           )}
-          <TransitInfo selectedRoute={selectedRoute} />
         </div>
         <div className="map-panel">
           <MapComponent 

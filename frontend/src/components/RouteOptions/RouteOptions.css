@@ -162,6 +162,138 @@
   font-weight: 500;
 }
 
+.route-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.bus-badge {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.train-badge {
+  background-color: #2196F3;
+  color: white;
+}
+
+.mixed-badge {
+  background-color: #9C27B0;
+  color: white;
+}
+
+.safety-badge {
+  background-color: #FF9800;
+  color: white;
+}
+
+.safest-route-badge {
+  background-color: #F44336;
+  color: white;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.safety-score {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  font-size: 0.8rem;
+  color: #555;
+}
+
+.safety-score-high {
+  color: #4CAF50;
+}
+
+.safety-score-medium {
+  color: #FF9800;
+}
+
+.safety-score-low {
+  color: #F44336;
+}
+
+.safety-icon {
+  margin-right: 4px;
+}
+
+.safety-toggle {
+  display: flex;
+  align-items: center;
+  margin: 10px 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.safety-toggle label {
+  margin-left: 10px;
+  font-size: 0.9rem;
+  color: #555;
+  user-select: none;
+}
+
+.safety-toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+}
+
+.safety-toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.safety-toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.safety-toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .safety-toggle-slider {
+  background-color: #2196F3;
+}
+
+input:checked + .safety-toggle-slider:before {
+  transform: translateX(20px);
+}
+
 .loading-indicator {
   text-align: center;
   padding: 20px;
